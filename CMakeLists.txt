@@ -13,10 +13,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
-
 find_package(Qt6 COMPONENTS Multimedia REQUIRED)
 
 set(TS_FILES MultimediaPlayer_zh_CN.ts)
+
+# 导入视频解码模块进行编译
+set(DECODE_MODULE_DIR multimedia_decode_module)
+set(ROOT_DIR MultimediaPlayer)
+FILE(GLOB DECODE_MODULE_HEADER "${DECODE_MODULE_DIR}/*.hpp" "${DECODE_MODULE_DIR}/*.h")
+FILE(GLOB DECODE_MODULE_SOURCE "${DECODE_MODULE_DIR}/*.cpp" "${DECODE_MODULE_DIR}/*.c")
+source_group("${DECODE_MODULE_DIR}/Header" FILES ${DECODE_MODULE_HEADER})
+source_group("${DECODE_MODULE_DIR}/Source" FILES ${DECODE_MODULE_SOURCE})
 
 set(PROJECT_SOURCES
         main.cpp
@@ -24,12 +31,8 @@ set(PROJECT_SOURCES
         mainwindow.h
         mainwindow.ui
 
-        multimediafile.h
-        multimediafile.cpp
-
-        ffmpegmultimedia.cpp
-        ffmpegmultimedia.h
-
+        ${DECODE_MODULE_HEADER}
+        ${DECODE_MODULE_SOURCE}
         ${TS_FILES}
 )
 

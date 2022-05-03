@@ -31,6 +31,12 @@ private:
     const AVCodec* _videoCodec;
     const AVCodec* _audioCodec;
 
+    AVCodecContext* _videoCodecCtx;
+    AVCodecContext* _audioCodecCtx;
+
+    AVStream* _videoStream;
+    AVStream* _audioStream;
+
     int _videoStreamId;
     int _audioStreamId;
 
@@ -40,14 +46,14 @@ public:
     FFMpegMultimedia();
 
     void virtual open(QString path) override;
-//    qreal virtual getDurationInSeconds() override;
-//    void virtual seek(qreal timestamp) override;
-//    void virtual nextFrame() override;
-//    qreal virtual getCurrentTimeStamp() override;
-//    QImage virtual getImage() override;
-//    QByteArray virtual getPCM() override;
-//    qreal virtual getFrameRate() override;
-//    qreal virtual getFrameInterval() override;
+    qreal virtual getDurationInSeconds() override;
+    void virtual seek(qreal timestamp) override;
+    void virtual nextFrame() override;
+    qreal virtual getCurrentTimeStamp() override;
+    QImage virtual getImage() override;
+    QByteArray virtual getPCM() override;
+    qreal virtual getFrameRate() override;
+    qreal virtual getFrameInterval() override;
 };
 
 } // namespace lzq

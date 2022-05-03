@@ -4,6 +4,7 @@
 #include <QLocale>
 #include <QTranslator>
 #include <QtMultimedia>
+#include <QDebug>
 
 
 QByteArray generatePCM()
@@ -71,6 +72,7 @@ int main(int argc, char *argv[])
 
     QObject::connect(timer_play, &QTimer::timeout, [&]
     {
+        qDebug() << "test";
         if (pcm1.size() > 0) {
             int readSize = output.bufferSize();
             int chunks = output.bytesFree() / readSize;
