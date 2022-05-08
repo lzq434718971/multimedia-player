@@ -5,7 +5,10 @@
 #include <QTranslator>
 #include <QtMultimedia>
 #include <QDebug>
+#include "multimedia_decode_module/bufferblock.h"
+#include "multimedia_decode_module/ffmpegmultimedia.h"
 
+using namespace lzq;
 
 QByteArray generatePCM()
 {
@@ -55,41 +58,62 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    QByteArray pcm1 = generatePCM();
+    FFMpegMultimedia ffmpeg;
+
+    ffmpeg.open("video/Final.Fantasy.VII.Advent.Children.2005.1080p.BrRip.x264.BOKUTOX.YIFY.mp4");
+
+    QByteArray pcm1;
 
     QAudioFormat format;
-    format.setSampleRate(8000);
+    format.setSampleRate(ffmpeg.getAudioSampleRate());
     format.setSampleFormat(QAudioFormat::Int16);
-    format.setChannelCount(1);
+    format.setChannelCount(ffmpeg.getChannelCount());
 
     QAudioSink output=QAudioSink(format);
 
     QIODevice *device = output.start();
 
-    QTimer *timer_play = new QTimer(qApp);
+    QThread thread;
+
+    QTimer *timer_play = new QTimer();
     timer_play->setTimerType(Qt::PreciseTimer);
-    timer_play->setInterval(1000);
-
-    QObject::connect(timer_play, &QTimer::timeout, [&]
-    {
-        qDebug() << "test";
-        if (pcm1.size() > 0) {
-            int readSize = output.bufferSize();
-            int chunks = output.bytesFree() / readSize;
-            while (chunks) {
-                QByteArray samples = pcm1.mid(0, readSize);
-                int len = samples.size();
-                pcm1.remove(0, len);
-
-                if (len) device->write(samples);
-                if (len != readSize) break;
-
-                chunks--;
-            }
-        }
-    });
-
+    timer_play->setInterval(ffmpeg.getFrameInterval()*1000);
     timer_play->start();
+    //timer_play->moveToThread(&thread);
+
+    MainWindow w;
+
+    int i = 0;
+    ffmpeg.seek(0);
+    QMetaObject::Connection playConnect;
+    playConnect = QObject::connect(timer_play, &QTimer::timeout, [&]
+    {
+        i++;
+        //if (i == 1)
+        //{
+        //    qDebug() << "跳转到------------------------------------";
+        //    ffmpeg.seek(10);
+        //}
+        //if (i == 10)
+        //{
+        //    qDebug() << "跳转到------------------------------------";
+        //    ffmpeg.seek(10.99);
+        //}
+        //ffmpeg.seek(ffmpeg.getCurrentTimeStamp() - ffmpeg.getFrameInterval());
+        pcm1 = ffmpeg.getPCM();
+        w.test = ffmpeg.getImage();
+        //w.test.save(".\\images\\frame"+QString::number(i)+".jpg");
+        w.repaint();
+        ffmpeg.nextFrame();
+        int freeB = output.bytesFree();
+        //qDebug() << freeB;
+        //while (pcm1.size() > freeB)
+        //{
+        //    //qDebug() << freeB;
+        //    continue;
+        //}
+        device->write(pcm1);
+    });
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -100,7 +124,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    MainWindow w;
+
     w.show();
 
     return a.exec();

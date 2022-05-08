@@ -68,7 +68,7 @@ endif()
 
 target_link_libraries(MultimediaPlayer PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 target_link_libraries(MultimediaPlayer PUBLIC Qt${QT_VERSION_MAJOR}::Multimedia)
-target_link_libraries(MultimediaPlayer PUBLIC avutil avcodec avfilter avdevice avformat postproc swresample)
+target_link_libraries(MultimediaPlayer PUBLIC avutil avcodec avfilter avdevice avformat postproc swresample swscale)
 
 set_target_properties(MultimediaPlayer PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
