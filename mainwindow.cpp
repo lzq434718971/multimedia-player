@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "multimedia_decode_module/myopenglwidget.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -15,11 +16,14 @@ MainWindow::~MainWindow()
 
 void MainWindow::paintEvent(QPaintEvent* pev)
 {
-    QRectF target(10.0, 20.0, 710.0, 420.0);
-    QRectF source(300.0, 200.0, 700.0, 400.0);
+    MyOpenGLWidget* widget = findChild<MyOpenGLWidget*>("openGLWidget");
+    widget->test = test;
+    widget->repaint();
+//    QRectF target(0, 0, width(), height());
+//    QRectF source(0, 0, test.width(), test.height());
 
-    QPainter painter(this);
-    //painter.drawImage(QPoint(0, 0), test);
-    painter.drawImage(target, test, source);
+//    QPainter painter(this);
+//    //painter.drawImage(QPoint(0, 0), test);
+//    painter.drawImage(target, test, source);
 }
 

@@ -14,6 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt6 COMPONENTS Multimedia REQUIRED)
+find_package(Qt6 COMPONENTS OpenGLWidgets REQUIRED)
 
 set(TS_FILES MultimediaPlayer_zh_CN.ts)
 
@@ -67,6 +68,7 @@ else()
 endif()
 
 target_link_libraries(MultimediaPlayer PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(MultimediaPlayer PRIVATE Qt${QT_VERSION_MAJOR}::OpenGLWidgets)
 target_link_libraries(MultimediaPlayer PUBLIC Qt${QT_VERSION_MAJOR}::Multimedia)
 target_link_libraries(MultimediaPlayer PUBLIC avutil avcodec avfilter avdevice avformat postproc swresample swscale)
 
