@@ -7,7 +7,7 @@
 #include <queue>
 #include <list>
 #include <map>
-#include "multimediafile.h""
+#include "multimediafile.h"
 
 extern "C"
 {
@@ -30,6 +30,8 @@ namespace lzq {
  */
 class FFMpegMultimedia:public MultimediaFile
 {
+    //时间戳使用的类型的别名.
+    typedef qint64 TimeStamp;
 private:
     AVFormatContext* _fmtCtx;
 
@@ -61,11 +63,15 @@ private:
 
     bool _isAttached;
 
-    //当前的pts(自动对齐到音频pts)
+    //当前的pts(视频time_base)
     qint64 _pts;
     //因为出现了_pts通过累加帧间隔来计算会导致误差越来越大的问题（导致跳帧）
     //因此改用累计帧数的做法，并通过帧数计算_pts
     qint64 _frameCount;
+
+    //由于之前的pts都是采用视频time_base的pts，根据视频不同播放的效果也不同
+    //对某些视频可能会存在时间戳精度不够的问题
+    TimeStamp _interPts;
 
     QByteArray _totalAudio;
 
@@ -84,12 +90,12 @@ private:
     int _iBufferNum;
     list<AVFrame*> _imageBuffer;
     //记录当前缓存中图像帧pts的下界，处理在刚跳转时第一帧的pts可能在pts之后的情况.
-    qint64 _bufferPtsBottom;
+    TimeStamp _bufferPtsBottom;
 
     //缓存少量音频，会根据当前pts释放无用的数据.
     QByteArray _tempPCM;
     //记录当前剩余音频数据的头部pts.
-    qint64 _tempPCMHead;
+    TimeStamp _tempPCMHead;
 
     //队列中会存放:如果正常向前逐帧播放，将会访问到的帧.
     //将要播放的图像队列
@@ -100,10 +106,12 @@ private:
     //AVFrame池，避免频繁分配AVFrame，pool中的frame从前面出后面进.
     list<AVFrame*> _framePool;
 
-    QImage _testBuffer;
+    bool _isOpening;
 
-
-    void initBuffer();
+    /**
+     * 初始化类内部一些简单变量的值.
+     **/
+    void simpPropInit();
 
     /**
      *  简单地读取一帧到_frame中,会使_fmtCtx状态发生变化(移动一帧),只适用于一个包对应一帧的情况.
@@ -173,9 +181,9 @@ private:
     void readLeastAudioPacketForOneFrame();
 
     /**
-     * 输出音频时用到的函数，通过给定pts获取在音频数组中的具体索引.
+     * 输出音频时用到的函数，通过给定内置通用pts获取在音频数组中的具体索引.
      **/
-    int ptsToByteIndex(qint64 pts);
+    int ptsToByteIndex(TimeStamp pts);
 
     /**
      * 输出音频时用到的函数，通过给定时间获取在音频数组中的具体索引.
@@ -204,12 +212,19 @@ private:
     //解析到_pts后最近的一帧
     void readVideoPacket();
 
+    //各种时间戳之间的转换函数.
     inline qint64 realTimeToPts(qreal timestamp, AVRational base);
     inline qreal ptsToRealTime(qint64 pts, AVRational base);
     qint64 ptsToFrame(qint64 pts);
     inline qint64 realPtsToFrame(qint64 pts);
     qint64 videoPtsToAudioPts(qint64 pts);
     qint64 audioPtsToVideoPts(qint64 pts);
+    TimeStamp videoPtsToTimeStamp(qint64 pts);
+    TimeStamp audioPtsToTimeStamp(qint64 pts);
+    TimeStamp realTimeToTimeStamp(qreal sec);
+    qreal timeStampToRealTime(TimeStamp ts);
+    qint64 timeStampToVideoPts(TimeStamp ts);
+    qint64 timeStampToAudioPts(TimeStamp ts);
 
     //根据当前打开的上下文格式,通过AVFrame获取一个QImage
     QImage AVFrameToQImage(AVFrame* frame);
@@ -225,8 +240,10 @@ private:
     void recorePtsToFrameSet(AVPacket* pkt,qint64 index);
 public:
     FFMpegMultimedia();
+    virtual ~FFMpegMultimedia() override;
 
-    void virtual open(QString path) override;
+    int virtual open(QString path) override;
+    void virtual close() override;
     qreal virtual getDurationInSeconds() override;
     void virtual seek(qreal timestamp) override;
     void virtual nextFrame() override;
@@ -243,24 +260,6 @@ public:
      * 返回每个采样占用的字节数（考虑了通道数）;
      **/
     qint32 virtual getAudioBytePerSample();
-
-    ///**
-    // * 操作视频播放队列(_imageQueue).
-    // **/
-    // //会复制传入的帧保存在队列中.
-    //void pushImageQueue(AVFrame* frame);
-    //AVFrame* popImageQueue();
-
-    //void testFreeFrame(AVFrame* frame);
-
-    ///**
-    // *  简单地读取一帧到_frame中,会使_fmtCtx状态发生变化(移动一帧),只适用于一个包对应一帧的情况.
-    // **/
-    //int readPacket();
-
-    ////解析音/视频统一用的载体
-    //AVPacket* _packet;
-    //AVFrame* _frame;
 };
 
 } // namespace lzq

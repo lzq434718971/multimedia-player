@@ -8,13 +8,20 @@ namespace lzq {
 class MultimediaFile
 {
 public:
-    MultimediaFile();
+    //MultimediaFile();
+    virtual ~MultimediaFile() = default;
 
     /**
      * @brief 按照路径绑定文件,每个实例仅调用一次
      * @param path 文件路径
+     * @return 操作状态码
      */
-    void virtual open(QString path)=0;
+    int virtual open(QString path)=0;
+
+    /**
+     * @brief 关闭当前打开的文件流，释放解码内存
+     */
+    void virtual close() = 0;
 
     /**
      * @brief 获取该多媒体文件的总时长

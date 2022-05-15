@@ -7,6 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    //this->widget = findChild<MyOpenGLWidget*>("openGLWidget");
 }
 
 MainWindow::~MainWindow()
@@ -16,14 +17,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::paintEvent(QPaintEvent* pev)
 {
-    MyOpenGLWidget* widget = findChild<MyOpenGLWidget*>("openGLWidget");
-    widget->test = test;
-    widget->repaint();
-//    QRectF target(0, 0, width(), height());
-//    QRectF source(0, 0, test.width(), test.height());
+    //widget->test = test;
+    //widget->repaint();
+    QRectF target(0, 0, width(), height());
+    QRectF source(0, 0, test.width(), test.height());
 
-//    QPainter painter(this);
-//    //painter.drawImage(QPoint(0, 0), test);
-//    painter.drawImage(target, test, source);
+    QPainter painter(this);
+    //painter.drawImage(QPoint(0, 0), test);
+    painter.drawImage(target, test, source);
 }
 

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <qpainter.h>
+#include "multimedia_decode_module/myopenglwidget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -14,6 +15,7 @@ class MainWindow : public QMainWindow
 
 public:
     QImage test;
+    MyOpenGLWidget* widget;
 
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
