@@ -51,7 +51,7 @@ int FFMpegMultimedia::readPacket()
     }
     else
     {
-        qDebug() << "不存在流:" << _packet->stream_index;
+        //qDebug() << "不存在流:" << _packet->stream_index;
         return -3;
     }
 
@@ -544,10 +544,11 @@ void FFMpegMultimedia::freeQueue(list<AVFrame*>& queue)
 void FFMpegMultimedia::chopTempPCMBeforePts()
 {
     int sIndex = ptsToByteIndex(_tempPCMHead);
-    int eIndex = ptsToByteIndex(_interPts);
+    int eIndex = ptsToByteIndex(_bufferPtsBottom);
     _tempPCM = _tempPCM.mid(eIndex - sIndex,-1);
     //_tempPCMHead = _pts;
-    _tempPCMHead = _interPts;
+    //_tempPCMHead = _interPts;
+    _tempPCMHead = max(_bufferPtsBottom,_tempPCMHead);
 }
 
 void FFMpegMultimedia::readLeastAudioPacketForOneFrame()
@@ -559,7 +560,7 @@ void FFMpegMultimedia::readLeastAudioPacketForOneFrame()
     //qDebug() << "需求音频缓存长度:" << len;
     int i = 0;
     //如果音频还不够长，就需要读入更多包延长缓存数据.
-    while (_tempPCM.size()<len)
+    while ((_tempPCM.size() - ptsToByteIndex(_interPts - _tempPCMHead)) <len)
     {
         i++;
         //qDebug() << "读入" << i << "帧补充音频缓存";
@@ -624,7 +625,7 @@ AVFrame* FFMpegMultimedia::findNearestImageBuffer(qint64 pts)
     AVFrame* ret = nullptr;
     for (list<AVFrame*>::iterator i = _imageBuffer.begin(); i != _imageBuffer.end(); i++)
     {
-        qint64 dis = abs(pts - (*i)->best_effort_timestamp);
+        qint64 dis = abs(pts - videoPtsToTimeStamp((*i)->best_effort_timestamp));
         if (minPtsDis > dis)
         {
             minPtsDis = dis;
@@ -688,10 +689,7 @@ int FFMpegMultimedia::open(QString path)
     {
         close();
     }
-    else
-    {
-        _isOpening = true;
-    }
+    _isOpening = true;
 
     int state;
     //打开视频文件
@@ -756,7 +754,7 @@ void FFMpegMultimedia::close()
     avcodec_free_context(&_videoCodecCtx);
     avcodec_free_context(&_audioCodecCtx);
     avformat_close_input(&_fmtCtx);
-    //avformat_free_context(_fmtCtx);
+    avformat_free_context(_fmtCtx);
 
     simpPropInit();
 }
@@ -768,6 +766,11 @@ qreal FFMpegMultimedia::getDurationInSeconds()
 
 void FFMpegMultimedia::seek(qreal timestamp)
 {
+    if (timestamp<0 || timestamp>getDurationInSeconds())
+    {
+        qInfo() << "seek时间戳非法";
+        return;
+    }
     qint64 targetPts = realTimeToTimeStamp(timestamp);
     _interPts = realTimeToTimeStamp(timestamp);
     _frameCount = getCurrentTimeStamp() / getFrameInterval();
@@ -787,15 +790,23 @@ void FFMpegMultimedia::seek(qreal timestamp)
 
         AVFrame* audioHead;
         bool first = true;
+        qint64 packetHead;
         do
         {
             readPacket();
             if (_packet->stream_index == _audioStreamId)
             {
-                _tempPCMHead = audioPtsToTimeStamp(_frame->best_effort_timestamp);
-                if (_tempPCMHead + audioPtsToTimeStamp(_frame->pkt_duration) >= _interPts)
+                qint64 packetSizeTS = audioPtsToTimeStamp(_frame->pkt_duration);
+                packetHead = audioPtsToTimeStamp(_frame->best_effort_timestamp);
+                if (first)
                 {
-                    _tempPCM.push_back(AVFrameToPCM(_frame));
+                    _tempPCMHead = packetHead;
+                    first = false;
+                }
+                _tempPCM.push_back(AVFrameToPCM(_frame));
+                //_tempPCMHead = _bufferPtsBottom;
+                if (packetHead +audioPtsToTimeStamp(_frame->pkt_duration) >= _interPts)
+                {
                     //av_frame_unref(_frame);
                     break;
                 }
@@ -803,7 +814,7 @@ void FFMpegMultimedia::seek(qreal timestamp)
             else if (_packet->stream_index == _videoStreamId)
             {
                 pushImageQueue(_frame);
-                if (videoPtsToTimeStamp(_imageQueue.front()->best_effort_timestamp) <= _interPts)
+                while (!_imageQueue.empty() && videoPtsToTimeStamp(_imageQueue.front()->best_effort_timestamp) <= _interPts)
                 {
                     //_bufferPtsBottom = videoPtsToTimeStamp(_imageQueue.front()->best_effort_timestamp);
                     AVFrame* pastImg = popImageQueue();
@@ -813,7 +824,12 @@ void FFMpegMultimedia::seek(qreal timestamp)
             }
         } while (true);
 
-        qint64 bottomVideoPts = _imageBuffer.front()->best_effort_timestamp;
+        qint64 bottomVideoPts = -1;
+        if (!_imageBuffer.empty())
+        {
+            bottomVideoPts = _imageBuffer.front()->best_effort_timestamp;
+        }
+
         if (bottomVideoPts >= 0 && videoPtsToTimeStamp(bottomVideoPts) <= _interPts)
         {
             _bufferPtsBottom = videoPtsToTimeStamp(bottomVideoPts);
@@ -822,6 +838,7 @@ void FFMpegMultimedia::seek(qreal timestamp)
         {
             _bufferPtsBottom = _interPts;
         }
+        chopTempPCMBeforePts();
         //_bufferPtsBottom = _interPts;
     }
 }
@@ -913,7 +930,9 @@ QByteArray FFMpegMultimedia::getPCM()
     chopTempPCMBeforePts();
     //qDebug()<< "音频切帧后:"<< ptsToRealTime(_tempPCMHead, _videoStream->time_base);
     readLeastAudioPacketForOneFrame();
-    return _tempPCM.mid(0, len);
+
+    qint64 sIndex = ptsToByteIndex(_interPts - _tempPCMHead);
+    return _tempPCM.mid(sIndex, len);
 }
 
 qreal FFMpegMultimedia::getFrameRate()

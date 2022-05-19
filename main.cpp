@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 
+#include <algorithm>
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
@@ -17,10 +18,14 @@ int main(int argc, char *argv[])
     FFMpegMultimedia ffmpeg;
     //FFMpegMultimedia* ffmpeg2 = new FFMpegMultimedia();
 
-    ffmpeg.open("video/MediaExample.mp4");
+    ffmpeg.open("video/最后一战_高清 1080P.mp4");
+    //ffmpeg.open("video/Final.Fantasy.VII.Advent.Children.2005.1080p.BrRip.x264.BOKUTOX.YIFY.mp4");
+    //ffmpeg.open("video/M09-1317.mp4");
+    //ffmpeg.open("video/Kingsglaive Final Fantasy XV 2016 1080p WEB-DL x264 AAC-JYK.mkv");
     //ffmpeg2.open("video/Kingsglaive Final Fantasy XV 2016 1080p WEB-DL x264 AAC-JYK.mkv");
 
     QByteArray pcm1;
+    QByteArray rePcm;
 
     QAudioFormat format;
     format.setSampleRate(ffmpeg.getAudioSampleRate());
@@ -46,7 +51,7 @@ int main(int argc, char *argv[])
 
     int i = 0;
     QRandomGenerator rgen;
-    //ffmpeg.seek(125);
+    ffmpeg.seek(10.99);
     QMetaObject::Connection playConnect;
     playConnect = QObject::connect(timer_play, &QTimer::timeout, [&]
     {
@@ -57,11 +62,11 @@ int main(int argc, char *argv[])
         //    qDebug() << "跳转到------------------------------------";
         //    ffmpeg.seek(124);
         //}
-        //if (i == 5)
-        //{
-        //    qDebug() << "跳转到------------------------------------";
-        //    ffmpeg.seek(124.5);
-        //}
+        if (i == 5)
+        {
+            qDebug() << "跳转到------------------------------------";
+            ffmpeg.seek(1245.5);
+        }
         //if (i % 101 == 0 && i<500)
         //{
         //    ffmpeg.close();
@@ -79,12 +84,15 @@ int main(int argc, char *argv[])
         //    delete ffmpeg2;
         //    ffmpeg2 = new FFMpegMultimedia();
         //}
-        //ffmpeg.seek(ffmpeg.getCurrentTimeStamp() - ffmpeg.getFrameInterval());
+        ffmpeg.seek(ffmpeg.getCurrentTimeStamp() - ffmpeg.getFrameInterval());
         pcm1 = ffmpeg.getPCM();
+        //rePcm = QByteArray(pcm1.size(), 0);
+        //rePcm = std::copy(pcm1.crbegin(), pcm1.crend(), rePcm.begin());
+        //std::reverse(pcm1.begin(), pcm1.end());
         w.test = ffmpeg.getImage();
         ////w.test.save(".\\images\\frame"+QString::number(i)+".jpg");
         w.repaint();
-        ffmpeg.nextFrame();
+        //ffmpeg.nextFrame();
         while (true)
         {
             int freeB = output.bytesFree();
@@ -95,6 +103,7 @@ int main(int argc, char *argv[])
                 continue;
             }
             device->write(pcm1);
+            //device->write(rePcm);
             pcm1.clear();
             break;
         }
