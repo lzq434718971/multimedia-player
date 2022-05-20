@@ -53,11 +53,25 @@ void PlayThread::dowork(){
         QByteArray pcm1 = ffmpeg->getPCM();
         ffmpeg->nextFrame();
         emit updateImage(img);
-        device->write(pcm1);
+        while(true)
+        {
+            if(pcm1.size()<=output->bytesFree())
+            {
+                device->write(pcm1);
+                break;
+            }
+            QThread::msleep(10);
+        }
     });
 }
 
 void PlayThread::turnto(qreal i){
+    if(i < 0){
+        i = 0;
+    }
+    if(i > ffmpeg->getDurationInSeconds()){
+        i = ffmpeg->getDurationInSeconds();
+    }
     ffmpeg->seek(i);
     if(!playState){
         initTimer();
@@ -89,4 +103,14 @@ void PlayThread::fastplay(qreal i){
     initdevice();
     initTimer();
     dowork();
+}
+
+void PlayThread::fastforward(){
+    qreal i = ffmpeg->getCurrentTimeStamp() + 5;
+    turnto(i);
+}
+
+void PlayThread::fastback(){
+    qreal i = ffmpeg->getCurrentTimeStamp() - 5;
+    turnto(i);
 }

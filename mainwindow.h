@@ -31,13 +31,7 @@ signals:
     void turnto(qreal i);//跳转信号
     void fastplay(qreal i);//倍数设置
 private slots:
-    void on_pushButton_clicked();
 
-    void on_pushButton_2_clicked();
-
-    void on_pushButton_3_clicked();
-
-    void on_pauseButton_clicked();
 
 private:
     Ui::MainWindow *ui;

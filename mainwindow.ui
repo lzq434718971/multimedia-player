@@ -101,6 +101,32 @@
      <string>2倍数</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="fastback">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>500</y>
+      <width>75</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>快退</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="fastforward">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>500</y>
+      <width>75</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>快进</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

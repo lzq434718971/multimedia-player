@@ -17,6 +17,8 @@ public slots:
     void dowork();//启动
     void turnto(qreal i = 0);//跳转到指定秒数
     void pause();//播放或暂停
+    void fastforward();
+    void fastback();
 signals:
     void updateImage(QImage img);//更新Image
 private:
@@ -26,7 +28,6 @@ private:
     QAudioFormat format;
     bool playFlag;//播放启动
     bool playState;//播放状态
-    bool first;
     qreal fast=1;
 public:
     QIODevice *device;
