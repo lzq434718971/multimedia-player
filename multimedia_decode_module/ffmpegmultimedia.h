@@ -108,6 +108,9 @@ private:
 
     bool _isOpening;
 
+    bool _hasVideo;
+    bool _hasAudio;
+
     /**
      * 初始化类内部一些简单变量的值.
      **/
@@ -206,6 +209,11 @@ private:
     void commonStreamInit(AVFormatContext* context, AVMediaType streamType,
         int& streamID, AVCodecParameters*& codecPar, const AVCodec*& codec, AVCodecContext*& codecCtx, AVStream*& stream);
 
+    /**
+     * 获取专辑封面.
+     **/
+    QImage getAlbumPicture();
+
     //跳转到指定帧，并设置好解码器上下文
     void seekAndSetCodecCtx(int64_t pts);
 
@@ -255,6 +263,7 @@ public:
 
     qint32 virtual getAudioSampleRate();
     qint32 virtual getChannelCount();
+    
 
     /**
      * 返回每个采样占用的字节数（考虑了通道数）;

@@ -18,7 +18,9 @@ int main(int argc, char *argv[])
     FFMpegMultimedia ffmpeg;
     //FFMpegMultimedia* ffmpeg2 = new FFMpegMultimedia();
 
-    ffmpeg.open("video/最后一战_高清 1080P.mp4");
+    qDebug()<<ffmpeg.open("video/祖堅正慶 (そけん まさよし) - Answers.mp3");
+    qDebug() << ffmpeg.getFrameInterval();
+    //ffmpeg.open("video/最后一战_高清 1080P.mp4");
     //ffmpeg.open("video/Final.Fantasy.VII.Advent.Children.2005.1080p.BrRip.x264.BOKUTOX.YIFY.mp4");
     //ffmpeg.open("video/M09-1317.mp4");
     //ffmpeg.open("video/Kingsglaive Final Fantasy XV 2016 1080p WEB-DL x264 AAC-JYK.mkv");
@@ -51,7 +53,7 @@ int main(int argc, char *argv[])
 
     int i = 0;
     QRandomGenerator rgen;
-    ffmpeg.seek(10.99);
+    ffmpeg.seek(60.2);
     QMetaObject::Connection playConnect;
     playConnect = QObject::connect(timer_play, &QTimer::timeout, [&]
     {
@@ -67,11 +69,12 @@ int main(int argc, char *argv[])
             qDebug() << "跳转到------------------------------------";
             ffmpeg.seek(1245.5);
         }
-        //if (i % 101 == 0 && i<500)
-        //{
-        //    ffmpeg.close();
-        //    ffmpeg.open("video/Final.Fantasy.VII.Advent.Children.2005.1080p.BrRip.x264.BOKUTOX.YIFY.mp4");
-        //}
+        if (i % 101 == 0)
+        {
+            //ffmpeg.seek(i / 10);
+            ffmpeg.seek(ffmpeg.getCurrentTimeStamp()+5);
+            //ffmpeg.open("video/祖堅正慶 (そけん まさよし) - Answers.mp3");
+        }
         //if (i % 200 == 0 && i<500)
         //{
         //    ffmpeg.close();
@@ -84,15 +87,15 @@ int main(int argc, char *argv[])
         //    delete ffmpeg2;
         //    ffmpeg2 = new FFMpegMultimedia();
         //}
-        ffmpeg.seek(ffmpeg.getCurrentTimeStamp() - ffmpeg.getFrameInterval());
-        pcm1 = ffmpeg.getPCM();
+        //ffmpeg.seek(ffmpeg.getCurrentTimeStamp() - ffmpeg.getFrameInterval());
         //rePcm = QByteArray(pcm1.size(), 0);
         //rePcm = std::copy(pcm1.crbegin(), pcm1.crend(), rePcm.begin());
         //std::reverse(pcm1.begin(), pcm1.end());
         w.test = ffmpeg.getImage();
+        pcm1 = ffmpeg.getPCM();
         ////w.test.save(".\\images\\frame"+QString::number(i)+".jpg");
         w.repaint();
-        //ffmpeg.nextFrame();
+        ffmpeg.nextFrame();
         while (true)
         {
             int freeB = output.bytesFree();
