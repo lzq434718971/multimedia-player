@@ -155,7 +155,7 @@ QImage FFMpegMultimedia::getAlbumPicture()
             AVPacket pkt = _fmtCtx->streams[i]->attached_pic;
             //使用QImage读取完整图片数据（注意，图片数据是为解析的文件数据，需要用QImage::fromdata来解析读取）
             QImage img = QImage::fromData((uchar*)pkt.data, pkt.size);
-            //av_packet_unref(&pkt);
+            img.convertTo(QImage::Format_RGB888);
             return img;
         }
     }
@@ -774,6 +774,10 @@ int FFMpegMultimedia::open(QString path)
 
 void FFMpegMultimedia::close()
 {
+    if (!_isOpening)
+    {
+        return;
+    }
     _isOpening = false;
 
     freeQueue(_imageQueue);
@@ -807,7 +811,7 @@ qreal FFMpegMultimedia::getDurationInSeconds()
 
 void FFMpegMultimedia::seek(qreal timestamp)
 {
-    if (timestamp<0 || timestamp>getDurationInSeconds())
+    if (timestamp<0 || timestamp>=getDurationInSeconds())
     {
         qInfo() << "seek时间戳非法";
         return;
@@ -952,7 +956,7 @@ qreal FFMpegMultimedia::getCurrentTimeStamp()
 
 QImage FFMpegMultimedia::getImage()
 {
-    if (!_hasVideo)
+    if (!_isOpening || !_hasVideo)
     {
         return getAlbumPicture();
         //return QImage();
@@ -992,7 +996,7 @@ QImage FFMpegMultimedia::getImage()
 
 QByteArray FFMpegMultimedia::getPCM()
 {
-    if (!_hasAudio)
+    if (!_isOpening || !_hasAudio)
     {
         return QByteArray();
     }
