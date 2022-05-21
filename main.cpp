@@ -1,118 +1,122 @@
 #include "mainwindow.h"
 
-#include <algorithm>
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
 #include <QtMultimedia>
 #include <QDebug>
-#include "multimedia_decode_module/bufferblock.h"
 #include "multimedia_decode_module/ffmpegmultimedia.h"
 
 using namespace lzq;
 
+QByteArray generatePCM()
+{
+    //幅度，因为sampleSize = 16bit
+    qint16 amplitude = INT16_MAX;
+    //单声道
+    int channels = 1;
+    //采样率
+    int samplerate = 8000;
+    //持续时间ms
+    int duration = 20;
+    //总样本数
+    int n_samples = int(channels * samplerate * (duration / 1000.0));
+    //声音频率
+    int frequency = 100;
+
+    bool reverse = false;
+    QByteArray data;
+    QDataStream out(&data, QIODevice::WriteOnly);
+    out.setByteOrder(QDataStream::LittleEndian);
+    for (int i = 0; i < 1000; i++) {
+        for (int j = 0; j < n_samples; j++) {
+            qreal radians = qreal(2.0 * M_PI * j  * frequency / qreal(samplerate));
+            qint16 sample = qint16(qSin(radians) * amplitude);
+            out << sample;
+        }
+
+        if (!reverse) {
+            if (frequency < 2000) {
+                frequency += 100;
+            } else reverse = true;
+        } else {
+            if (frequency > 100) {
+                frequency -= 100;
+            } else reverse = false;
+        }
+    }
+
+    QFile file("raw");
+    file.open(QIODevice::WriteOnly);
+    file.write(data);
+    file.close();
+
+    return data;
+}
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    FFMpegMultimedia ffmpeg;
-    //FFMpegMultimedia* ffmpeg2 = new FFMpegMultimedia();
+//    FFMpegMultimedia ffmpeg;
 
-    qDebug()<<ffmpeg.open("video/祖堅正慶 (そけん まさよし) - Answers.mp3");
-    qDebug() << ffmpeg.getFrameInterval();
-    //ffmpeg.open("video/最后一战_高清 1080P.mp4");
-    //ffmpeg.open("video/Final.Fantasy.VII.Advent.Children.2005.1080p.BrRip.x264.BOKUTOX.YIFY.mp4");
-    //ffmpeg.open("video/M09-1317.mp4");
-    //ffmpeg.open("video/Kingsglaive Final Fantasy XV 2016 1080p WEB-DL x264 AAC-JYK.mkv");
-    //ffmpeg2.open("video/Kingsglaive Final Fantasy XV 2016 1080p WEB-DL x264 AAC-JYK.mkv");
+//    ffmpeg.open("video/1.mp4");
 
-    QByteArray pcm1;
-    QByteArray rePcm;
+//    QByteArray pcm1;
 
-    QAudioFormat format;
-    format.setSampleRate(ffmpeg.getAudioSampleRate());
-    format.setSampleFormat(QAudioFormat::Int16);
-    format.setChannelCount(ffmpeg.getChannelCount());
-    qDebug() << "每帧字节数:" << ffmpeg.getAudioBytePerSample();
+//    QAudioFormat format;
+//    format.setSampleRate(ffmpeg.getAudioSampleRate());
+//    format.setSampleFormat(QAudioFormat::Int16);
+//    format.setChannelCount(ffmpeg.getChannelCount());
 
-    QAudioSink output=QAudioSink(format);
+//    QAudioSink output=QAudioSink(format);
 
-    QIODevice *device = output.start();
+//    QIODevice *device = output.start();
 
-    QThread thread;
+//    QThread thread;
 
-    QTimer *timer_play = new QTimer();
-    timer_play->setTimerType(Qt::PreciseTimer);
-    timer_play->setInterval(ffmpeg.getFrameInterval()*1000);
-    timer_play->start();
+//    QTimer *timer_play = new QTimer();
+//    timer_play->setTimerType(Qt::PreciseTimer);
+//    timer_play->setInterval(ffmpeg.getFrameInterval()*1000);
+//    timer_play->start();
     //timer_play->moveToThread(&thread);
-    
+
+//    ffmpeg->moveToThread(thread);
+//    thread.start();
 
     MainWindow w;
-    
+//    int i = 0;
+//    ffmpeg.seek(0);
+//    QMetaObject::Connection playConnect;
+//    playConnect = QObject::connect(timer_play, &QTimer::timeout, [&]
+//    {
+//        i++;
+//        //if (i == 1)
+//        //{
+//        //    qDebug() << "跳转到------------------------------------";
+//        //    ffmpeg.seek(10);
+//        //}
+//        //if (i == 10)
+//        //{
+//        //    qDebug() << "跳转到------------------------------------";
+//        //    ffmpeg.seek(10.99);
+//        //}
+//        //ffmpeg.seek(ffmpeg.getCurrentTimeStamp() - ffmpeg.getFrameInterval());
+//        pcm1 = ffmpeg.getPCM();
+//        w.test = ffmpeg.getImage();
+//        //w.test.save(".\\images\\frame"+QString::number(i)+".jpg");
+//        w.repaint();
+//        ffmpeg.nextFrame();
+//        int freeB = output.bytesFree();
+//        //qDebug() << freeB;
+//        //while (pcm1.size() > freeB)
+//        //{
+//        //    //qDebug() << freeB;
+//        //    continue;
+//        //}
+//        device->write(pcm1);
+//    });
 
-    int i = 0;
-    QRandomGenerator rgen;
-    ffmpeg.seek(60.2);
-    QMetaObject::Connection playConnect;
-    playConnect = QObject::connect(timer_play, &QTimer::timeout, [&]
-    {
-        i++;
-        //qDebug() << "第" << i << "帧--------------";
-        //if (i == 1)
-        //{
-        //    qDebug() << "跳转到------------------------------------";
-        //    ffmpeg.seek(124);
-        //}
-        if (i == 5)
-        {
-            qDebug() << "跳转到------------------------------------";
-            ffmpeg.seek(1245.5);
-        }
-        if (i % 101 == 0)
-        {
-            //ffmpeg.seek(i / 10);
-            ffmpeg.seek(ffmpeg.getCurrentTimeStamp()+5);
-            //ffmpeg.open("video/祖堅正慶 (そけん まさよし) - Answers.mp3");
-        }
-        //if (i % 200 == 0 && i<500)
-        //{
-        //    ffmpeg.close();
-        //    ffmpeg.open("video/Kingsglaive Final Fantasy XV 2016 1080p WEB-DL x264 AAC-JYK.mkv");
-        //}
-        //if (i % 30 == 0)
-        //{
-        //    ffmpeg2->open("video/Final.Fantasy.VII.Advent.Children.2005.1080p.BrRip.x264.BOKUTOX.YIFY.mp4");
-        //    ffmpeg2->close();
-        //    delete ffmpeg2;
-        //    ffmpeg2 = new FFMpegMultimedia();
-        //}
-        //ffmpeg.seek(ffmpeg.getCurrentTimeStamp() - ffmpeg.getFrameInterval());
-        //rePcm = QByteArray(pcm1.size(), 0);
-        //rePcm = std::copy(pcm1.crbegin(), pcm1.crend(), rePcm.begin());
-        //std::reverse(pcm1.begin(), pcm1.end());
-        w.test = ffmpeg.getImage();
-        pcm1 = ffmpeg.getPCM();
-        ////w.test.save(".\\images\\frame"+QString::number(i)+".jpg");
-        w.repaint();
-        ffmpeg.nextFrame();
-        while (true)
-        {
-            int freeB = output.bytesFree();
-            //int actualWrite = device->write(pcm1);
-            if (freeB < pcm1.size())
-            {
-                QThread::msleep(10);
-                continue;
-            }
-            device->write(pcm1);
-            //device->write(rePcm);
-            pcm1.clear();
-            break;
-        }
-    });
 
-    //thread.start();
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -125,6 +129,5 @@ int main(int argc, char *argv[])
     }
 
     w.show();
-
     return a.exec();
 }

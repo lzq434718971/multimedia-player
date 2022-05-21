@@ -26,12 +26,15 @@ FILE(GLOB DECODE_MODULE_SOURCE "${DECODE_MODULE_DIR}/*.cpp" "${DECODE_MODULE_DIR
 source_group("${DECODE_MODULE_DIR}/Header" FILES ${DECODE_MODULE_HEADER})
 source_group("${DECODE_MODULE_DIR}/Source" FILES ${DECODE_MODULE_SOURCE})
 
+
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
 
+        playthread.h
+        playthread.cpp
         ${DECODE_MODULE_HEADER}
         ${DECODE_MODULE_SOURCE}
         ${TS_FILES}
@@ -39,6 +42,10 @@ set(PROJECT_SOURCES
 
 include_directories(${PROJECT_SOURCE_DIR}/ffmpeg/include)
 LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/ffmpeg/lib)
+
+include_directories(${PROJECT_SOURCE_DIR}/SDL/include)
+LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/SDL/lib)
+
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(MultimediaPlayer
@@ -71,6 +78,7 @@ target_link_libraries(MultimediaPlayer PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 target_link_libraries(MultimediaPlayer PRIVATE Qt${QT_VERSION_MAJOR}::OpenGLWidgets)
 target_link_libraries(MultimediaPlayer PUBLIC Qt${QT_VERSION_MAJOR}::Multimedia)
 target_link_libraries(MultimediaPlayer PUBLIC avutil avcodec avfilter avdevice avformat postproc swresample swscale)
+target_link_libraries(MultimediaPlayer PRIVATE Qt${QT_VERSION_MAJOR}::Widgets avcodec avfilter avformat avutil swresample swscale SDL2 SDL2main )
 
 set_target_properties(MultimediaPlayer PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
