@@ -3,7 +3,7 @@
 PlayThread::PlayThread(QObject *parent){
     ffmpeg = new lzq::FFMpegMultimedia;
     playFlag = false;
-
+    playState = false;
 }
 PlayThread::~PlayThread(){
 
@@ -25,6 +25,7 @@ void PlayThread::initdevice(){
 }
 
 void PlayThread::initTimer(){
+
     ptimer = new QTimer();
     ptimer->setTimerType(Qt::PreciseTimer);
     ptimer->setInterval(ffmpeg->getFrameInterval()*1000/fast);
@@ -32,17 +33,19 @@ void PlayThread::initTimer(){
 }
 
 void PlayThread::openFile(QString url){
+    mutex.lock();
     if(playFlag)
     {
         ptimer->deleteLater();
+        ptimer = nullptr;
     }
 
     playFlag = true;
     ffmpeg->open(url);
-    ffmpeg->seek(0);
     fast = 1;
     initdevice();
     initTimer();
+    mutex.unlock();
 }
 
 void PlayThread::dowork(){
@@ -52,16 +55,19 @@ void PlayThread::dowork(){
         QImage img = ffmpeg->getImage();
         QByteArray pcm1 = ffmpeg->getPCM();
         ffmpeg->nextFrame();
+//        qDebug() << ffmpeg->getCurrentTimeStamp();
         emit updateImage(img);
         while(true)
         {
             if(pcm1.size()<=output->bytesFree())
             {
                 device->write(pcm1);
+                pcm1.clear();
                 break;
             }
             QThread::msleep(10);
         }
+
     });
 }
 
@@ -74,6 +80,7 @@ void PlayThread::turnto(qreal i){
     }
     ffmpeg->seek(i);
     if(!playState){
+        qDebug()<<"快进恢复播放";
         initTimer();
         dowork();
     }
@@ -82,6 +89,7 @@ void PlayThread::turnto(qreal i){
 void PlayThread::pause(){
     if(playState){
         ptimer->deleteLater();
+        ptimer = nullptr;
         playState = false;
         qDebug()<<"ptimer1 stop";
     }else{
@@ -93,13 +101,25 @@ void PlayThread::pause(){
 }
 
 void PlayThread::close(){
+    mutex.lock();
     ffmpeg->close();
+    device->deleteLater();
+    device = nullptr;
+    ptimer->deleteLater();
+    ptimer = nullptr;
+    playFlag = false;
+    playState = false;
+    QImage img;
+    emit updateImage(img);
+    mutex.unlock();
 }
 
 void PlayThread::fastplay(qreal i){
     fast = i;
     device->deleteLater();
+    device = nullptr;
     ptimer->deleteLater();
+    ptimer = nullptr;
     initdevice();
     initTimer();
     dowork();
