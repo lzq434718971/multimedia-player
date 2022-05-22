@@ -34,6 +34,7 @@ set(PROJECT_SOURCES
         mainwindow.ui
         res.qrc
 
+
         playthread.h
         playthread.cpp
         ${DECODE_MODULE_HEADER}
