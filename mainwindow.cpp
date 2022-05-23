@@ -35,12 +35,12 @@ MainWindow::MainWindow(QWidget *parent)
     });
     //播放1视频测试按钮
     connect(ui->pushButton_2,&QPushButton::clicked,this,[=](){
-        playthread->openFile("D:/DD观察日记/bilibili_花谱_kaf_22030718/花谱高校毕业live.mp4");
+        playthread->openFile("video/最后一战_高清 1080P.mp4");
         emit play();
     });
     //播放2视频测试按钮
     connect(ui->pushButton_3,&QPushButton::clicked,this,[=](){
-        playthread->openFile("D:/DD观察日记/bilibili_异世界情绪-异世界情绪_23601103/异世界情绪个人演唱会「Anima」_20211023171148113.mp4");
+        playthread->openFile("video/祖堅正慶 (そけん まさよし) - Answers.mp3");
         emit play();
     });
     //跳转测试按钮
@@ -60,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
         test = img;
     });
     timer = new QTimer();
-    timer->setInterval(10);
+    timer->setInterval(33);
     connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
     timer->start();
 
