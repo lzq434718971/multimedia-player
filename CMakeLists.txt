@@ -32,9 +32,16 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
+        res.qrc
+
 
         playthread.h
         playthread.cpp
+        customslider.h
+        customslider.cpp
+        videowidget.h
+        videowidget.cpp
+
         ${DECODE_MODULE_HEADER}
         ${DECODE_MODULE_SOURCE}
         ${TS_FILES}
