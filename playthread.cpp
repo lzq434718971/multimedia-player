@@ -51,11 +51,13 @@ void PlayThread::openFile(QString url){
 
 void PlayThread::dowork(){
     playState = true;
-    connect(ptimer,&QTimer::timeout,this,[=]()
+    connect(ptimer,&QTimer::timeout,this,[&]()
     {
+            this->mutex.lock();
         QImage img = ffmpeg->getImage();
         QByteArray pcm1 = ffmpeg->getPCM();
         ffmpeg->nextFrame();
+        this->mutex.unlock();
         emit updateImage(img);
         emit positionChanged(ffmpeg->getCurrentTimeStamp());
         while(true)

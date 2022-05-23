@@ -14,6 +14,8 @@ public:
     void initTimer();//初始化计时器
 
     void fastplay(qreal i);
+
+    QMutex mutex;
 public slots:
     void dowork();//启动
     void turnto(qreal i = 0);//跳转到指定秒数
@@ -36,7 +38,6 @@ private:
     bool playFlag;//播放启动
     bool playState;//播放状态
     qreal fast;
-    QMutex mutex;
 public:
     QIODevice *device;
 };

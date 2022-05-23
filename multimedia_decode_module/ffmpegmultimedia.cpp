@@ -14,6 +14,24 @@ int alignByte(int index, int cell)
 
 void FFMpegMultimedia::simpPropInit()
 {
+    _videoStreamId = -1;
+    _audioStreamId = -1;
+
+    _videoCodecPar = nullptr;
+    _audioCodecPar = nullptr;
+
+    _videoCodec = nullptr;
+    _audioCodec = nullptr;
+
+    _videoCodecCtx = nullptr;
+    _audioCodecCtx = nullptr;
+
+    _videoStream = nullptr;
+    _audioStream = nullptr;
+
+    _imgConvert = nullptr;
+    _audioConvert = nullptr;
+
     _imgConvert = NULL;
     _audioConvert = NULL;
 
@@ -156,6 +174,8 @@ QImage FFMpegMultimedia::getAlbumPicture()
             //使用QImage读取完整图片数据（注意，图片数据是为解析的文件数据，需要用QImage::fromdata来解析读取）
             QImage img = QImage::fromData((uchar*)pkt.data, pkt.size);
             img.convertTo(QImage::Format_RGB888);
+            qDebug() << "线程=" << QThread::currentThreadId << "获取封面操作完成";
+            qDebug() << "线程=" << QThread::currentThreadId << ":此时_isOpening" << _isOpening;
             return img;
         }
     }
@@ -423,11 +443,6 @@ FFMpegMultimedia::FFMpegMultimedia():MultimediaFile()
     simpPropInit();
 
     _iBufferNum = 30;
-
-    _fmtCtx = avformat_alloc_context();
-
-    _packet = av_packet_alloc();
-    _frame = av_frame_alloc();
 
     _imageBuffer = list<AVFrame*>();
 
@@ -711,7 +726,11 @@ int FFMpegMultimedia::open(QString path)
     {
         close();
     }
-    _isOpening = true;
+
+    _fmtCtx = avformat_alloc_context();
+
+    _packet = av_packet_alloc();
+    _frame = av_frame_alloc();
 
     int state;
     //打开视频文件
@@ -766,6 +785,8 @@ int FFMpegMultimedia::open(QString path)
         swr_init(_audioConvert);
     }
 
+    _isOpening = true;
+
     return 0;
     //readTotalAudio();
     //readAValidPacketTo(_videoPacket, _videoStreamId);
@@ -788,8 +809,8 @@ void FFMpegMultimedia::close()
     sws_freeContext(_imgConvert);
     swr_free(&_audioConvert);
 
-    av_frame_unref(_frame);
-    av_packet_unref(_packet);
+    av_frame_free(&_frame);
+    av_packet_free(&_packet);
     if (_hasVideo)
     {
         avcodec_free_context(&_videoCodecCtx);
@@ -956,8 +977,16 @@ qreal FFMpegMultimedia::getCurrentTimeStamp()
 
 QImage FFMpegMultimedia::getImage()
 {
-    if (!_isOpening || !_hasVideo)
+    qDebug() << "线程=" << QThread::currentThreadId << ":_isOpening" << _isOpening;
+    if (!_isOpening)
     {
+        return QImage();
+    }
+    qDebug() << "线程=" << QThread::currentThreadId << "执行getImage";
+    if (!_hasVideo)
+    {
+        qDebug() << "线程=" << QThread::currentThreadId << "执行获取封面操作";
+        qDebug() << "线程=" << QThread::currentThreadId << ":此时_isOpening" << _isOpening;
         return getAlbumPicture();
         //return QImage();
     }
