@@ -7,6 +7,8 @@
 #include <QDebug>
 #include <QString>
 #include <QFileDialog>
+#include <QTime>
+#include <QMessageBox>
 #include "multimedia_decode_module/ffmpegmultimedia.h"
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -14,10 +16,46 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    setWindowTitle("我不崩");
+
+
+    isForbidBtn=true;
+    ui->lastBtn->setEnabled(false);
+    ui->nextBtn->setEnabled(false);
+    ui->pauseButton->setEnabled(false);
+    ui->fastback->setEnabled(false);
+    ui->fastplay->setEnabled(false);
+    ui->fastforward->setEnabled(false);
+    ui->videoSlider->setEnabled(false);
+    ui->volumeSlider->setEnabled(false);
+    ui->volumeBtn->setEnabled(false);
+
+    ui->widget->setContextMenuPolicy(Qt::ActionsContextMenu);
+    QAction* qaSKey=new QAction("快捷键",ui->widget);
+    ui->widget->addAction(qaSKey);
+    connect(qaSKey,&QAction::triggered,this,[=](){
+        QListWidget*sKeyWidget=new QListWidget();
+        sKeyWidget->setFixedSize(180,140);
+        sKeyWidget->setWindowTitle("快捷键");
+        sKeyWidget->addItem("1. 空格键 播放或暂停");
+        sKeyWidget->addItem("2. Ctrl + F 全屏或小屏");
+        sKeyWidget->addItem("3. Ctrl + I 唤起资源导入弹窗");
+        sKeyWidget->addItem("4. Ctrl + ← 上一首");
+        sKeyWidget->addItem("5. Ctrl + → 下一首");
+        sKeyWidget->addItem("6. Ctrl + ↑ 增加音量");
+        sKeyWidget->addItem("7. Ctrl + ↓ 降低音量");
+        sKeyWidget->setWindowModality(Qt::WindowModal);
+        sKeyWidget->show();
+    });
+
     //全屏
     isFullScreen=false;
     //播放速度
     fastrate=1;
+    //播放列表是否隐藏
+    isListHide=false;
+    //播放顺序
+    order=0;
     //---------SDL----------
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 //    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
@@ -33,68 +71,95 @@ MainWindow::MainWindow(QWidget *parent)
     thread->start();
 
     myPlayList=new QStringList();
+
+    initPlayList();
     //设置播放列表选中模式 按ctrl多选
     ui->listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     //播放列表双击选中播放
     connect(ui->listWidget,&QListWidget::itemDoubleClicked,this,[=](QListWidgetItem * item){
+        if(isForbidBtn){
+            emit permitBtn();
+        }
         qDebug()<<"双击选中播放";
 //        playthread->close();
 //        QThread::msleep(20);
-        for(int i=0;i<ui->listWidget->count();i++){
-             ui->listWidget->item(i)->setBackground(QColor("white"));
-        }
-        item->setBackground(QColor(176,224,230));
+
         int index=ui->listWidget->row(item);
-        playthread->openFile(myPlayList->at(index));
-        indexPlay=index;
-        emit play();
-
-        if(ismute){
-            //设置为静音
-            emit volumeChange(0);
-            ui->volumeBtn->setIcon(QIcon(":/images/mute.png"));
-            qDebug()<<"静音状态";
-
+        QString str=myPlayList->at(index);
+        if(QFile::exists(str)){
+             playthread->openFile(str);
+             indexPlay=index;
+             emit play();
+             emit fastplay(fastrate);
+             ui->fastplay->setText(QString::number(fastrate)+"x");
+             for(int i=0;i<ui->listWidget->count();i++){
+                  ui->listWidget->item(i)->setBackground(QColor("white"));
+             }
+             item->setBackground(QColor(176,224,230));
         }else{
-
-            emit volumeChange(volumenum);
-            ui->volumeBtn->setIcon(QIcon(":/images/volume.png"));
+            if(indexPlay>index) indexPlay--;
+            myPlayList->removeAt(index);
+            ui->listWidget->removeItemWidget(item);
+            delete item;
+//             qDebug()<<ui->listWidget->count();
+            renewPlayListTxt();
+            emit itemRemove();
+            QMessageBox::information(this, "提示", str+"文件不存在，已从列表删除！", QMessageBox::Ok, QMessageBox::NoButton);
+            for(int i=0;i<ui->listWidget->count();i++){
+                 ui->listWidget->item(i)->setBackground(QColor("white"));
+            }
+            ui->listWidget->item(indexPlay)->setBackground(QColor(176,224,230));
         }
-        emit fastplay(fastrate);
-        ui->fastplay->setText(QString::number(fastrate)+"x");
+
     });
 
     //指定视频index播放（上一个下一个）
      connect(this,&MainWindow::playById,this,[=](int index){
 
-        ui->fastplay->setText("1.0x");
-        for(int i=0;i<ui->listWidget->count();i++){
-             ui->listWidget->item(i)->setBackground(QColor("white"));
-        }
-         ui->listWidget->item(index)->setBackground(QColor(176,224,230));
-
-         playthread->openFile(myPlayList->at(index));
-         indexPlay=index;
-         emit play();
-
-         if(ismute){
-             //设置为静音
-             emit volumeChange(0);
-             ui->volumeBtn->setIcon(QIcon(":/images/mute.png"));
-         }else{
-
-             emit volumeChange(volumenum);
-             ui->volumeBtn->setIcon(QIcon(":/images/volume.png"));
+         if(isForbidBtn){
+             emit permitBtn();
          }
-         emit fastplay(fastrate);
-         ui->fastplay->setText(QString::number(fastrate)+"x");
+//        ui->fastplay->setText("1.0x");
 
+
+//         playthread->openFile(myPlayList->at(index));
+//         indexPlay=index;
+//         emit play();
+
+//         emit fastplay(fastrate);
+//         ui->fastplay->setText(QString::number(fastrate)+"x");
+
+         QString str=myPlayList->at(index);
+         if(QFile::exists(str)){
+              playthread->openFile(str);
+              indexPlay=index;
+              emit play();
+              emit fastplay(fastrate);
+              ui->fastplay->setText(QString::number(fastrate)+"x");
+              for(int i=0;i<ui->listWidget->count();i++){
+                   ui->listWidget->item(i)->setBackground(QColor("white"));
+              }
+               ui->listWidget->item(index)->setBackground(QColor(176,224,230));
+         }else{
+             if(indexPlay>index) indexPlay--;
+             myPlayList->removeAt(index);
+             ui->listWidget->removeItemWidget(ui->listWidget->item(index));
+             delete ui->listWidget->item(index);
+             renewPlayListTxt();
+             emit itemRemove();
+             QMessageBox::information(this, "提示", str+"文件不存在，已从列表删除！", QMessageBox::Ok, QMessageBox::NoButton);
+             for(int i=0;i<ui->listWidget->count();i++){
+                  ui->listWidget->item(i)->setBackground(QColor("white"));
+             }
+              ui->listWidget->item(indexPlay)->setBackground(QColor(176,224,230));
+         }
      });
 
     //视频进度条初始化
     connect(playthread,&PlayThread::durationChanged,this,[=](qreal i){
          ui->videoSlider->setRange(0,i);
+         durationCurrent=i;
          QString timer=QTime(0,0,0).addSecs(int(i)).toString(QString::fromLatin1("HH:mm:ss"));
          QString s="/ ";
          timer=s+timer;
@@ -107,6 +172,11 @@ MainWindow::MainWindow(QWidget *parent)
         }
         QString timer=QTime(0,0,0).addSecs(int(i)).toString(QString::fromLatin1("HH:mm:ss"));
         ui->currenttime_label->setText(timer);
+//        qDebug()<<i;
+        if(i>durationCurrent-0.005){
+            emit videoEnd();
+            qDebug()<<"发送结束信号";
+        }
     });
     //视频进度条被拖动中
     connect(ui->videoSlider,&CustomSlider::sliderMoved ,this,[=](){
@@ -114,7 +184,12 @@ MainWindow::MainWindow(QWidget *parent)
     });
     //视频进度条被拖动后释放
     connect(ui->videoSlider,&CustomSlider::sliderReleased,this,[=](){
-        emit turnto(ui->videoSlider->value());
+        int value=ui->videoSlider->value();
+        if(value==ui->videoSlider->maximum()){
+             emit turnto(ui->videoSlider->value()-1);
+        }else{
+             emit turnto(ui->videoSlider->value());
+        }
         ui->videoSlider->ismove=true;
     });
     //视频进度条单击跳转
@@ -128,33 +203,58 @@ MainWindow::MainWindow(QWidget *parent)
       ui->volumeSlider->setRange(0,100);
       ui->volumeSlider->setValue(20);
       connect(ui->volumeSlider,&QSlider::sliderReleased,this,[=](){
+              volumenum=qreal(ui->volumeSlider->value())/100;
+              ui->volumeLabel->setText(QString::number(volumenum*100)+"%");
+              emit volumeChange(volumenum);
+              if(ismute){
+                  ui->volumeBtn->setIcon(QIcon(":/images/volume.png"));
+                  ismute=false;
+              }
+      });
+      connect(ui->volumeSlider,&CustomSlider::costomSliderClicked,this,[=](){
           volumenum=qreal(ui->volumeSlider->value())/100;
+          ui->volumeLabel->setText(QString::number(volumenum*100)+"%");
           emit volumeChange(volumenum);
+          if(ismute){
+              ui->volumeBtn->setIcon(QIcon(":/images/volume.png"));
+              ismute=false;
+          }
       });
       connect(ui->volumeBtn,&QPushButton::clicked,this,[=](){
           if(ismute){
               emit volumeChange(volumenum);
+              ui->volumeLabel->setText(QString::number(volumenum*100)+"%");
               ui->volumeBtn->setIcon(QIcon(":/images/volume.png"));
               ismute=false;
           }else{
               //设置为静音
               emit volumeChange(0);
+              ui->volumeLabel->setText("0%");
               ui->volumeBtn->setIcon(QIcon(":/images/mute.png"));
               ismute=true;
           }
       });
 
-      connect(this,&MainWindow::volumeChange,playthread,&PlayThread::volumeControl);
+
+    //播放下一首
+      connect(this,&MainWindow::videoEnd,this,&MainWindow::playNext);
+
+    //音量控制
+    connect(this,&MainWindow::volumeChange,playthread,&PlayThread::volumeControl);
     //启动信号
     connect(this,&MainWindow::play,playthread,&PlayThread::dowork);
     //跳转信号
     connect(this,&MainWindow::turnto,playthread,&PlayThread::turnto);
+    //设置按钮可用
+    connect(this,&MainWindow::permitBtn,this,&MainWindow::setBtnTrue);
 
     //全屏播放
     connect(ui->fullscreenBtn,&QPushButton::clicked,this,[=](){
         if(isFullScreen){
             showNormal();
-            ui->right_widget->setVisible(true);
+            if(!isListHide){
+                ui->right_widget->setVisible(true);
+            }
             ui->menubar->setVisible(true);
             ui->control_widget->setVisible(true);
             isFullScreen=false;
@@ -166,6 +266,7 @@ MainWindow::MainWindow(QWidget *parent)
             ui->control_widget->setVisible(false);
             isFullScreen=true;
              ui->fullscreenBtn->setIcon(QIcon(":/images/quxiaoquanping.png"));
+
         }
 
 
@@ -182,6 +283,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
     //文件列表项删除后更新播放列表
     connect(this,&MainWindow::itemRemove,ui->listWidget,[=](){
+        qDebug()<<"收到更新列表信号了";
         int count=ui->listWidget->count();
         if (count > 0)
         {
@@ -273,8 +375,48 @@ MainWindow::~MainWindow()
     thread->wait();
     delete ui;
 }
+
+
  //键盘按下事件
 void MainWindow::keyPressEvent(QKeyEvent *event){
+
+
+    if(event->key()==Qt::Key_Space){
+        if(!isForbidBtn){
+            emit ui->pauseButton->clicked();
+        }
+    }
+    if(event->modifiers()==Qt::ControlModifier && event->key()==Qt::Key_F){
+         emit ui->fullscreenBtn->clicked();
+    }
+    if(event->modifiers()==Qt::ControlModifier && event->key()==Qt::Key_I){
+         emit ui->addFileBtn->clicked();
+    }
+    if(event->modifiers()==Qt::ControlModifier && event->key()==Qt::Key_Left){
+         if(!isForbidBtn){
+             on_lastBtn_clicked();
+         }
+
+    }
+    if(event->modifiers()==Qt::ControlModifier && event->key()==Qt::Key_Right){
+         if(!isForbidBtn){
+             on_nextBtn_clicked();
+         }
+    }
+    if(event->modifiers()==Qt::ControlModifier && event->key()==Qt::Key_Up){
+         if(!isForbidBtn){
+            volumenum=volumenum+0.02>1?1:volumenum+0.02;
+            ui->volumeLabel->setText(QString::number(volumenum*100)+"%");
+            emit volumeChange(volumenum);
+         }
+    }
+    if(event->modifiers()==Qt::ControlModifier && event->key()==Qt::Key_Down){
+         if(!isForbidBtn){
+            volumenum=volumenum-0.02<0?0:volumenum-0.02;
+            ui->volumeLabel->setText(QString::number(volumenum*100)+"%");
+            emit volumeChange(volumenum);
+         }
+    }
     if(event->key()==Qt::Key_Escape){
         showNormal();
         ui->right_widget->setVisible(true);
@@ -283,11 +425,9 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
         isFullScreen=false;
         ui->fullscreenBtn->setIcon(QIcon(":/images/quanping.png"));
     }
-}
-//键盘松开事件
-void MainWindow::keyReleaseEvent(QKeyEvent *event){
 
 }
+
 
 void MainWindow::paintEvent(QPaintEvent* pev)
 {
@@ -329,7 +469,8 @@ void MainWindow::on_addFileBtn_clicked()
         ui->listWidget->addItem(text);//添加到文件列表
 
     }
-     qDebug()<<"..................";
+    renewPlayListTxt();
+
  //    foreach(QString const&str,myPlayList){
  //         qDebug()<<str;
  //    }
@@ -344,11 +485,18 @@ void MainWindow::on_addFileBtn_clicked()
 void MainWindow::on_removeFileBtn_clicked()
 {
     QList<QListWidgetItem*> items = ui->listWidget->selectedItems();
-    if (items.count() > 0)
+    int count=ui->listWidget->count();
+    if ( items.count() > 0)
      {
             foreach(QListWidgetItem* var, items)
             {
+                 count--;
                  int index=ui->listWidget->row(var);
+                 if(indexPlay>index) indexPlay--;
+                 else if(indexPlay==index){
+                     if(count>0) indexPlay=-2;//设置个标志
+                     else indexPlay=-1;//全删了
+                 }
                  myPlayList->removeAt(index);
                  ui->listWidget->removeItemWidget(var);
                  items.removeOne(var);
@@ -360,12 +508,59 @@ void MainWindow::on_removeFileBtn_clicked()
 //                     qDebug()<<aFile;
 //             }
       }
+    renewPlayListTxt();
     emit itemRemove();
 }
 
 
+void  MainWindow::playNext(){
+    if(indexPlay==-1) emit ui->pauseButton->clicked();
+    int count=myPlayList->count();
+    qDebug()<<"收到结束信号";
+    if(order==0){
+        //顺序播放
+        if(count>0){
+            if(indexPlay==-2){
+                emit playById(0);
+            }else{
+                int next=((indexPlay+1)+count)%count;
+                qDebug()<<"跳转到播放函数";
+                emit playById(next);
+            }
+        }
+    }else if(order==1){
+         //单曲播放
+        if(count>0){
+            if(indexPlay==-2){
+                emit playById(0);
+            }else{
+
+                emit playById(indexPlay);
+            }
+        }
+    }else{
+        //随机播放
+        if(count>0){
+            if(indexPlay==-2) indexPlay=0;
+            bool flag=true;
+            int next;
+            while(flag){
+                srand(QTime(0,0,0).secsTo(QTime::currentTime()));
+                next=rand()%count;
+                if(count==1) flag=false;
+                if(next!=indexPlay){
+                    flag=false;
+                }
+            }
+            emit playById(next);
+        }
+
+    }
+}
+
 void MainWindow::on_lastBtn_clicked()
 {
+    if(indexPlay==-1) return;
     int count=myPlayList->count();
     if(count>0){
         int last=((indexPlay-1)+count)%count;
@@ -376,10 +571,122 @@ void MainWindow::on_lastBtn_clicked()
 
 void MainWindow::on_nextBtn_clicked()
 {
+    if(indexPlay==-1) return;
     int count=myPlayList->count();
     if(count>0){
         int next=(indexPlay+1)%count;
              emit playById(next);
     }
 }
+
+
+void MainWindow::on_hiddenBtn_clicked()
+{
+    if(!isFullScreen){
+        if(isListHide){
+            //如果隐藏，则显示
+            ui->right_widget->setVisible(true);
+            ui->hiddenBtn->setToolTip("隐藏列表");
+            isListHide=false;
+        }else{
+            ui->right_widget->setVisible(false);
+            ui->hiddenBtn->setToolTip("显示列表");
+            isListHide=true;
+        }
+    }
+}
+
+
+void MainWindow::on_orderBtn_clicked()
+{
+    if(order==0){
+        //单曲播放
+        order=1;
+        ui->orderBtn->setIcon(QIcon(":/images/danquxunhuan.png"));
+        ui->orderBtn->setToolTip("单曲播放");
+    }else if(order ==1){
+        //随机播放
+        order=2;
+        ui->orderBtn->setIcon(QIcon(":/images/suijibofang.png"));
+        ui->orderBtn->setToolTip("随机播放");
+    }else{
+        //顺序播放
+        order=0;
+        ui->orderBtn->setIcon(QIcon(":/images/xunhuanbofang.png"));
+        ui->orderBtn->setToolTip("顺序播放");
+
+    }
+}
+
+void MainWindow::setBtnTrue(){
+    isForbidBtn=false;
+    ui->lastBtn->setEnabled(true);
+    ui->nextBtn->setEnabled(true);
+    ui->pauseButton->setEnabled(true);
+    ui->fastback->setEnabled(true);
+    ui->fastplay->setEnabled(true);
+    ui->fastforward->setEnabled(true);
+    ui->videoSlider->setEnabled(true);
+    ui->volumeSlider->setEnabled(true);
+    ui->volumeBtn->setEnabled(true);
+
+}
+
+void MainWindow::initPlayList(){
+    QString aFile=QDir::currentPath()+"/playList.txt";
+//    QMessageBox::information(this, "路径2", aFile, QMessageBox::Ok, QMessageBox::NoButton);
+    QString displayString;
+    QFile file(aFile);
+    if(file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        while(!file.atEnd())
+        {
+            QByteArray line = file.readLine();
+            QString str(line);
+            if(str.right(1)=='\n'){
+                str.chop(1);
+            }
+            qDebug()<< str;
+            if(QFile::exists(str)){
+                myPlayList->append(str);
+
+                QFileInfo   fileInfo(str);
+                int index=ui->listWidget->count();
+                QString text=QString::number(index+1)+"."+fileInfo.fileName();
+                ui->listWidget->addItem(text);//添加到文件列表
+            }else{
+                QMessageBox::information(this, "提示", str+"文件不存在，已从列表删除！", QMessageBox::Ok, QMessageBox::NoButton);
+            }
+        }
+        file.close();
+        renewPlayListTxt();
+    }else{
+        qDebug()<<"Can't open the file";
+    }
+
+
+
+}
+void MainWindow::renewPlayListTxt(){
+    QString aFile=QDir::currentPath()+"/playList.txt";
+    QFile file(aFile);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+       {
+           QTextStream stream(&file);
+           int count=myPlayList->count();
+           if (count > 0)
+           {
+              for(int i=0;i<count;i++)
+               {
+                    if(i==count-1)  stream<<myPlayList->at(i);
+                    else stream<<myPlayList->at(i)<< "\n";
+               }
+           }
+           file.close();
+       }else{
+         qDebug()<<"Can't open the file";
+    }
+
+}
+
 

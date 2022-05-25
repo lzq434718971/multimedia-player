@@ -12,5 +12,10 @@
         <file>images/volume.png</file>
         <file>images/quanping.png</file>
         <file>images/quxiaoquanping.png</file>
+        <file>images/danquxunhuan.png</file>
+        <file>images/liebiao.png</file>
+        <file>images/suijibofang.png</file>
+        <file>images/xunhuanbofang.png</file>
+        <file>images/delete.png</file>
     </qresource>
 </RCC>
