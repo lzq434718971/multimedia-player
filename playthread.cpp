@@ -4,6 +4,7 @@ PlayThread::PlayThread(QObject *parent){
     ffmpeg = new lzq::FFMpegMultimedia;
     playFlag = false;
     playState=false;
+    volume=0.2;
 
 }
 PlayThread::~PlayThread(){
@@ -21,7 +22,7 @@ void PlayThread::initdevice(){
     format.setChannelCount(ffmpeg->getChannelCount());
 
     output = new QAudioSink(format);
-    output->setVolume(0.2);
+    output->setVolume(volume);
     device = output->start();
 }
 
@@ -92,6 +93,7 @@ void PlayThread::turnto(qreal i){
 void PlayThread::volumeControl(qreal i)
 {
     output->setVolume(i);
+    volume=i;
     qDebug()<<"音量为"<<i;
 
 }
@@ -127,6 +129,7 @@ void PlayThread::close(){
 }
 
 void PlayThread::fastplay(qreal i){
+    mutex.lock();
     fast = i;
     device->deleteLater();
     device=nullptr;
@@ -135,6 +138,7 @@ void PlayThread::fastplay(qreal i){
     initdevice();
     initTimer();
     dowork();
+    mutex.unlock();
 }
 
 void PlayThread::fastforward(){

@@ -38,6 +38,7 @@ private:
     bool playFlag;//播放启动
     bool playState;//播放状态
     qreal fast;
+    qreal volume;//音量
 public:
     QIODevice *device;
 };
