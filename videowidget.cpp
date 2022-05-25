@@ -11,12 +11,12 @@ void VideoWidget::mouseMoveEvent(QMouseEvent*event){
 }
 
 void VideoWidget::enterEvent(QEnterEvent*event){
-    qDebug()<<"鼠标移入";
+//    qDebug()<<"鼠标移入。。";
     emit hideControlWidget();
 }
 
 void VideoWidget::leaveEvent(QEvent*event){
-    qDebug()<<"鼠标移出";
+//    qDebug()<<"鼠标移出";
     emit showControlWidget();
 }
 

@@ -977,12 +977,12 @@ qreal FFMpegMultimedia::getCurrentTimeStamp()
 
 QImage FFMpegMultimedia::getImage()
 {
-    qDebug() << "线程=" << QThread::currentThreadId << ":_isOpening" << _isOpening;
+    //qDebug() << "线程=" << QThread::currentThreadId << ":_isOpening" << _isOpening;
     if (!_isOpening)
     {
         return QImage();
     }
-    qDebug() << "线程=" << QThread::currentThreadId << "执行getImage";
+    //qDebug() << "线程=" << QThread::currentThreadId << "执行getImage";
     if (!_hasVideo)
     {
         qDebug() << "线程=" << QThread::currentThreadId << "执行获取封面操作";
