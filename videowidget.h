@@ -6,6 +6,7 @@
 #include <QEvent>
 #include <QEnterEvent>
 #include <QWidget>
+#include <QTimer>
 
 class VideoWidget : public QWidget
 {
@@ -13,14 +14,17 @@ class VideoWidget : public QWidget
 public:
     explicit VideoWidget(QWidget *parent = nullptr);
 
+
+private:
+    QTimer*timer;
+
 signals:
     void showControlWidget();
     void hideControlWidget();
 
 protected:
     void mouseMoveEvent(QMouseEvent*event);
-    void enterEvent(QEnterEvent*event);
-    void leaveEvent(QEvent*event);
+
 };
 
 #endif // VIDEOWIDGET_H

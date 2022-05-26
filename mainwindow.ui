@@ -20,6 +20,9 @@
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="4,1">
     <item>
      <widget class="QWidget" name="widget" native="true">
+      <property name="mouseTracking">
+       <bool>true</bool>
+      </property>
       <layout class="QVBoxLayout" name="verticalLayout_2" stretch="7,1">
        <item>
         <widget class="VideoWidget" name="SDLwidget" native="true">
@@ -37,6 +40,9 @@
            <width>0</width>
            <height>412</height>
           </size>
+         </property>
+         <property name="mouseTracking">
+          <bool>true</bool>
          </property>
          <property name="autoFillBackground">
           <bool>false</bool>
@@ -126,7 +132,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="D:/QtProjects/VideoPlayer/res.qrc">
+                <iconset resource="res.qrc">
                  <normaloff>:/images/volume.png</normaloff>:/images/volume.png</iconset>
                </property>
               </widget>
@@ -220,7 +226,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="D:/QtProjects/VideoPlayer/res.qrc">
+                <iconset resource="res.qrc">
                  <normaloff>:/images/before.png</normaloff>:/images/before.png</iconset>
                </property>
               </widget>
@@ -246,7 +252,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="D:/QtProjects/VideoPlayer/res.qrc">
+                <iconset resource="res.qrc">
                  <normaloff>:/images/play.png</normaloff>:/images/play.png</iconset>
                </property>
                <property name="iconSize">
@@ -281,7 +287,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="D:/QtProjects/VideoPlayer/res.qrc">
+                <iconset resource="res.qrc">
                  <normaloff>:/images/next.png</normaloff>:/images/next.png</iconset>
                </property>
               </widget>
@@ -310,7 +316,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="res.qrc">
                  <normaloff>:/images/reverse.png</normaloff>:/images/reverse.png</iconset>
                </property>
               </widget>
@@ -339,7 +345,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="res.qrc">
                  <normaloff>:/images/forward.png</normaloff>:/images/forward.png</iconset>
                </property>
               </widget>
@@ -428,7 +434,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="res.qrc">
                  <normaloff>:/images/xunhuanbofang.png</normaloff>:/images/xunhuanbofang.png</iconset>
                </property>
               </widget>
@@ -470,7 +476,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="res.qrc">
                  <normaloff>:/images/quanping.png</normaloff>:/images/quanping.png</iconset>
                </property>
               </widget>
@@ -499,7 +505,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="res.qrc">
                  <normaloff>:/images/liebiao.png</normaloff>:/images/liebiao.png</iconset>
                </property>
               </widget>
@@ -561,7 +567,7 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset resource="D:/QtProjects/VideoPlayer/res.qrc">
+             <iconset resource="res.qrc">
               <normaloff>:/images/upload.png</normaloff>:/images/upload.png</iconset>
             </property>
            </widget>
@@ -591,7 +597,7 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset>
+             <iconset resource="res.qrc">
               <normaloff>:/images/delete.png</normaloff>:/images/delete.png</iconset>
             </property>
            </widget>
@@ -641,6 +647,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="res.qrc"/>
+ </resources>
  <connections/>
 </ui>

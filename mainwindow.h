@@ -58,7 +58,7 @@ private slots:
     void setBtnTrue();
 
 protected:
-    void keyPressEvent(QKeyEvent *event); //键盘按下事件
+    void keyPressEvent(QKeyEvent *event) override; //键盘按下事件
 
 
 private:

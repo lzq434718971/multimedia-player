@@ -274,12 +274,19 @@ MainWindow::MainWindow(QWidget *parent)
     //全屏播放显示控制窗口
     connect(ui->SDLwidget,&VideoWidget::showControlWidget,this,[=](){
         if(isFullScreen)
+        {
+            QApplication::setOverrideCursor(QCursor(Qt::ArrowCursor));
             ui->control_widget->setVisible(true);
+        }
+
     });
     //全屏播放隐藏控制窗口
     connect(ui->SDLwidget,&VideoWidget::hideControlWidget,this,[=](){
         if(isFullScreen)
+        {
+            QApplication::setOverrideCursor(QCursor(Qt::BlankCursor));
             ui->control_widget->setVisible(false);
+        }
     });
     //文件列表项删除后更新播放列表
     connect(this,&MainWindow::itemRemove,ui->listWidget,[=](){
